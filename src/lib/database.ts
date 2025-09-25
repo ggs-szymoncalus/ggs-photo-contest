@@ -17,7 +17,12 @@ let pool: sql.ConnectionPool | null = null;
 export async function getConnection(): Promise<sql.ConnectionPool> {
   if (!pool) {
     pool = new sql.ConnectionPool(config);
-    await pool.connect();
+    try {
+      await pool.connect();
+    } catch (err) {
+      pool = null;
+      throw err;
+    }
   }
   return pool;
 }
