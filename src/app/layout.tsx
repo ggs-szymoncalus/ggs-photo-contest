@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { auth } from "@/config/authConfig";
 import Providers from "@/components/Providers";
+import { Toaster } from "sonner";
 // import { Roboto } from "next/font/google";
 
 // const roboto = Roboto({
@@ -25,6 +26,7 @@ export default async function RootLayout({
     return (
         <html lang="en">
             <body className="antialiased">
+                <Toaster />
                 <Providers session={session}>{children}</Providers>
             </body>
         </html>

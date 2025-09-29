@@ -13,12 +13,13 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
     // If they are authenticated, render the protected layout
     return (
-        <>
+        <div className="flex h-screen grow-1">
             <SideNav />
-            <main className="grow-1">
+
+            <main className="flex flex-1 flex-col ">
                 <Navbar />
-                {children}
+                <div className="flex-1 p-4 md:p-6">{children}</div>
             </main>
-        </>
+        </div>
     );
 }

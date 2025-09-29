@@ -1,11 +1,28 @@
+"use client";
+
 import Image from "next/image";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import { CircleUser, Images, LogOut } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { handleSignOut } from "@/service/auth";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Skeleton } from "./ui/skeleton";
+import React from "react";
+import { useSession } from "next-auth/react";
 
 export default function SideNav() {
+    const session = useSession();
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        if (session.status === "loading") {
+            setLoading(true);
+        } else {
+            setLoading(false);
+        }
+    }, [session.status]);
+
     return (
         <Sidebar>
             <SidebarHeader className="bg-white dark:bg-gray-800">
@@ -41,6 +58,33 @@ export default function SideNav() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
+                <div className="flex items-center gap-2 p-4">
+                    <Avatar>
+                        <AvatarImage
+                            src={session?.data?.user?.image ?? "https://github.com/shadcn.png"}
+                            alt="@shadcn"
+                            onLoad={() => setLoading(false)}
+                        />
+                        <AvatarFallback onLoad={() => setLoading(true)}>
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                        </AvatarFallback>
+                    </Avatar>
+
+                    {!loading ? (
+                        <div>
+                            <p className="text-sm font-medium">{session?.data?.user?.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                                {session?.data?.user?.email}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-1">
+                            <Skeleton className="mb-1 h-4 w-32 rounded" />
+                            <Skeleton className="h-3 w-40 rounded" />
+                        </div>
+                    )}
+                </div>
+                <Separator />
                 <p className="text-sm text-gray-500 p-4">© 2025 GGS IT Consulting</p>
             </SidebarFooter>
         </Sidebar>

@@ -56,8 +56,16 @@ export default function Navbar() {
         return () => clearInterval(timer);
     }, []);
 
+    const isLessThanOneDayLeft = timeLeft && timeLeft.days < 1;
+
     return (
-        <nav className="w-full border-b">
+        <nav
+            className={`w-full border-b ${
+                isLessThanOneDayLeft
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-green-100 text-green-800"
+            }`}
+        >
             <div className="flex items-center justify-center py-4">
                 <div className="text-sm">
                     {/* Render a placeholder or the actual time */}
