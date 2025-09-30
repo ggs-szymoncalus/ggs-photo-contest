@@ -1,4 +1,4 @@
-import { UserRole } from "./roles";
+import type { UserRole } from "./roles";
 
 export interface Submission {
     id: number;
@@ -15,6 +15,10 @@ export interface Submission {
 export interface User {
     id: number;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    imageLink?: string;
     role: UserRole;
+    createdAt: Date;
+    updatedAt: Date;
 }

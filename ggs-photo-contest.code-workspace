@@ -1,0 +1,38 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "editor.tabSize": 4,
+        "editor.indentSize": 4,
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "workbench.iconTheme": "material-icon-theme",
+        "github.copilot.nextEditSuggestions.enabled": true,
+        "editor.defaultFormatter": "biomejs.biome",
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "always",
+            "source.organizeImports": "always"
+        },
+        "[javascript]": {
+            "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[javascriptreact]": {
+            "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescript]": {
+            "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescriptreact]": {
+            "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[json]": {
+            "editor.quickSuggestions": {
+                "strings": true
+            },
+            "editor.suggest.insertMode": "replace"
+        }
+    }
+}

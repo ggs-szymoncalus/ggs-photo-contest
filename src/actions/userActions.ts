@@ -1,7 +1,7 @@
 import serverAuthenticate from "@/hooks/use-server-authenticate";
-import { UserRole } from "@/types/roles";
-import { addUser, deleteUser } from "@/service/data";
-import { ErrorResponse } from "@/types/response";
+import type { UserRole } from "@/types/roles";
+import { addUser, deleteUser, updateUser } from "@/service/data";
+import type { ErrorResponse } from "@/types/response";
 import { toast } from "sonner";
 
 export interface CreateUserData {
@@ -13,7 +13,6 @@ export interface CreateUserData {
 }
 
 export interface UpdateUserData {
-    id: number;
     email?: string;
     first_name?: string;
     last_name?: string;
@@ -22,11 +21,10 @@ export interface UpdateUserData {
 }
 
 export const createUser = async (data: CreateUserData) => {
-
     const { email, first_name, last_name, role } = data;
     const { isAuthenticated, session, error } = await serverAuthenticate("admin");
 
-    if(error) {
+    if (error) {
         toast.error(`An unexpected error occurred: ${error}`);
         return;
     }
@@ -36,14 +34,13 @@ export const createUser = async (data: CreateUserData) => {
         return;
     }
 
-    if(!isAuthenticated) {
+    if (!isAuthenticated) {
         toast.error("You must be signed in as an admin to create a user.");
         return;
-    }    
-    
+    }
+
     try {
-        const slackToken =
-            process.env.SLACK_TOKEN;
+        const slackToken = process.env.SLACK_TOKEN;
 
         let icon: string | null = null;
 
@@ -94,11 +91,11 @@ export const createUser = async (data: CreateUserData) => {
         return;
     }
     // Implementation for creating a user
-}
+};
 
 export const deleteUserById = async (userId: number) => {
     const { isAuthenticated, session, error } = await serverAuthenticate("admin");
-    if(error) {
+    if (error) {
         toast.error(`An unexpected error occurred: ${error}`);
         return;
     }
@@ -106,7 +103,7 @@ export const deleteUserById = async (userId: number) => {
         toast.error("You must be signed in to delete a user.");
         return;
     }
-    if(!isAuthenticated) {
+    if (!isAuthenticated) {
         toast.error("You must be signed in as an admin to delete a user.");
         return;
     }
@@ -120,11 +117,11 @@ export const deleteUserById = async (userId: number) => {
         return false;
     }
     // Implementation for deleting a user
-}
+};
 
-export const updateUser = async (userId: number, data: UpdateUserData) => {
+export const updateUserById = async (userId: number, data: UpdateUserData) => {
     const { isAuthenticated, session, error } = await serverAuthenticate("admin");
-    if(error) {
+    if (error) {
         toast.error(`An unexpected error occurred: ${error}`);
         return;
     }
@@ -132,7 +129,7 @@ export const updateUser = async (userId: number, data: UpdateUserData) => {
         toast.error("You must be signed in to update a user.");
         return;
     }
-    if(!isAuthenticated) {
+    if (!isAuthenticated) {
         toast.error("You must be signed in as an admin to update a user.");
         return;
     }
@@ -146,4 +143,4 @@ export const updateUser = async (userId: number, data: UpdateUserData) => {
         return false;
     }
     // Implementation for updating a user
-}
+};

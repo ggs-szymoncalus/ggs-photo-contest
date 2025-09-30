@@ -1,9 +1,9 @@
 "use server";
 
-import { CreateUserData, UpdateUserData } from "@/actions/userActions";
+import type { CreateUserData, UpdateUserData } from "@/actions/userActions";
 import { getConnection } from "@/lib/database";
-import { Submission, User } from "@/types/database";
-import { ServiceResponse } from "@/types/response";
+import type { Submission, User } from "@/types/database";
+import type { ServiceResponse } from "@/types/response";
 
 export async function getSubmissions(): Promise<ServiceResponse<Submission[]>> {
     try {
@@ -17,7 +17,7 @@ export async function getSubmissions(): Promise<ServiceResponse<Submission[]>> {
             };
         }
 
-        const submissions = await pool.request().query("SELECT * FROM sct_submissions");
+        const submissions = await pool.request().query("SELECT * FROM submissions");
 
         return {
             success: true,
@@ -38,9 +38,9 @@ export async function getSubmissionsFromThisWeek(): Promise<ServiceResponse<Subm
         const pool = await getConnection();
         if (!pool) {
             return {
-            success: false,
-            code: "S-00002",
-            error: "Failed to connect to the database",
+                success: false,
+                code: "S-00002",
+                error: "Failed to connect to the database",
             };
         }
 
@@ -58,24 +58,23 @@ export async function getSubmissionsFromThisWeek(): Promise<ServiceResponse<Subm
             SET @ThisMondayUTC = @ThisMondayCEST AT TIME ZONE 'Central European Standard Time' AT TIME ZONE 'UTC';
 
             SELECT 
-                s.Id,
+                s.id,
                 u.first_name + ' ' + u.last_name AS [name],
-                'https://ggs.pmg.net' + s.photo_link as [photo_link],
+                s.image_link,
                 s.title,
                 s.description,
                 c.name AS [category],
                 s.location,
-                s.submitted_at
-            FROM sct_submissions s
-            JOIN sct_users u ON s.user_id = u.Id
-            JOIN sct_categories c ON c.Id = s.category_id
-            WHERE s.submitted_at >= @ThisMondayUTC
-            ORDER BY s.submitted_at DESC;`;
+                s.created_at
+            FROM submissions s
+            JOIN users u ON s.user_id = u.id
+            JOIN categories c ON c.id = s.category_id
+            WHERE s.created_at >= @ThisMondayUTC
+            ORDER BY s.created_at DESC;`;
 
-    //        CASE WHEN v.user_id IS NOT NULL THEN 1 ELSE 0 END AS [vote]
+        //        CASE WHEN v.user_id IS NOT NULL THEN 1 ELSE 0 END AS [vote]
         // If you have the current user's email available, pass it here instead of ''
         const result = await pool.request().query(query);
-        console.log(result);
 
         return {
             success: true,
@@ -107,7 +106,7 @@ export async function getSubmissionsByUserId(
 
             .request()
             .input("userId", userId)
-            .query("SELECT * FROM sct_submissions WHERE user_id = @userId");
+            .query("SELECT * FROM submissions WHERE user_id = @userId");
         return {
             success: true,
             data: result.recordset,
@@ -140,7 +139,7 @@ export async function getSubmissionById(
 
             .request()
             .input("submissionId", submissionId)
-            .query("SELECT * FROM sct_submissions WHERE id = @submissionId");
+            .query("SELECT * FROM submissions WHERE id = @submissionId");
 
         if (result.recordset.length === 0) {
             return {
@@ -164,9 +163,7 @@ export async function getSubmissionById(
     }
 }
 
-export async function getUserByEmail(
-    email: string
-): Promise<ServiceResponse<User>> {
+export async function getUserByEmail(email: string): Promise<ServiceResponse<User>> {
     try {
         const pool = await getConnection();
         if (!pool) {
@@ -179,7 +176,7 @@ export async function getUserByEmail(
         const result = await pool
             .request()
             .input("email", email)
-            .query("SELECT id, email, first_name + ' ' + last_name as name, role FROM sct_users WHERE email = @email");
+            .query("SELECT id, email, first_name, last_name, role FROM users WHERE email = @email");
         if (result.recordset.length === 0) {
             return {
                 success: false,
@@ -191,8 +188,7 @@ export async function getUserByEmail(
             success: true,
             data: result.recordset[0],
         };
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error fetching user by email:", error);
         return {
             success: false,
@@ -202,9 +198,45 @@ export async function getUserByEmail(
     }
 }
 
-export async function addUser(
-    data: CreateUserData
-) : Promise<ServiceResponse<User>> {
+export async function getUserById(userId: number): Promise<ServiceResponse<User>> {
+    try {
+        const pool = await getConnection();
+        if (!pool) {
+            return {
+                success: false,
+                code: "U-04002",
+                error: "Failed to connect to the database",
+            };
+        }
+        const result = await pool
+
+            .request()
+            .input("userId", userId)
+            .query(
+                "SELECT id, email, first_name + ' ' + last_name as name, role FROM users WHERE id = @userId"
+            );
+        if (result.recordset.length === 0) {
+            return {
+                success: false,
+                code: "U-04003",
+                error: "User not found",
+            };
+        }
+        return {
+            success: true,
+            data: result.recordset[0],
+        };
+    } catch (error) {
+        console.error("Error fetching user by ID:", error);
+        return {
+            success: false,
+            code: "U-04001",
+            error: "An unexpected error occurred while fetching the user",
+        };
+    }
+}
+
+export async function addUser(data: CreateUserData): Promise<ServiceResponse<User>> {
     try {
         const { email, first_name, last_name, icon, role } = data;
         const pool = await getConnection();
@@ -224,8 +256,8 @@ export async function addUser(
             .input("icon", icon)
             .input("role", role)
             .query(
-                `INSERT INTO sct_users (email, first_name, last_name, icon, role)
-                    OUTPUT INSERTED.id, INSERTED.email, INSERTED.first_name + ' ' + INSERTED.last_name as name, INSERTED.role
+                `INSERT INTO users (email, first_name, last_name, icon, role)
+                    OUTPUT INSERTED.id, INSERTED.email, INSERTED.first_name, INSERTED.last_name, INSERTED.role
                     VALUES (@email, @first_name, @last_name, @icon, @role)`
             );
         return {
@@ -255,7 +287,7 @@ export async function deleteUser(userId: number): Promise<ServiceResponse<boolea
         const result = await pool
             .request()
             .input("userId", userId)
-            .query("DELETE FROM sct_users WHERE id = @userId");
+            .query("DELETE FROM users WHERE id = @userId");
         if (result.rowsAffected[0] === 0) {
             return {
                 success: false,
@@ -277,7 +309,10 @@ export async function deleteUser(userId: number): Promise<ServiceResponse<boolea
     }
 }
 
-export async function updateUser(userId: number, data: UpdateUserData): Promise<ServiceResponse<User>> {
+export async function updateUser(
+    userId: number,
+    data: UpdateUserData
+): Promise<ServiceResponse<User>> {
     try {
         const { email, first_name, last_name, icon, role } = data;
         const pool = await getConnection();
@@ -296,13 +331,15 @@ export async function updateUser(userId: number, data: UpdateUserData): Promise<
             .input("last_name", last_name)
             .input("icon", icon)
             .input("role", role)
+            .input("updated_at", new Date())
             .query(
-                `UPDATE sct_users
+                `UPDATE users
                     SET email = COALESCE(@email, email),
                         first_name = COALESCE(@first_name, first_name),
                         last_name = COALESCE(@last_name, last_name),
                         icon = @icon,
-                        role = COALESCE(@role, role)
+                        role = COALESCE(@role, role),
+                        updated_at = @updated_at
                     WHERE id = @userId`
             );
         if (result.rowsAffected[0] === 0) {
@@ -312,9 +349,20 @@ export async function updateUser(userId: number, data: UpdateUserData): Promise<
                 error: "User not found",
             };
         }
+
+        const user = await getUserById(userId);
+
+        if (!user.success || !user.data) {
+            return {
+                success: false,
+                code: "U-03004",
+                error: "Failed to retrieve updated user",
+            };
+        }
+
         return {
             success: true,
-            data: result.recordset[0],
+            data: user.data,
         };
     } catch (error) {
         console.error("Error updating user:", error);
@@ -322,6 +370,31 @@ export async function updateUser(userId: number, data: UpdateUserData): Promise<
             success: false,
             code: "U-03001",
             error: "An unexpected error occurred while updating the user",
+        };
+    }
+}
+
+export async function getUsers(): Promise<ServiceResponse<User[]>> {
+    try {
+        const pool = await getConnection();
+        if (!pool) {
+            return {
+                success: false,
+                code: "U-05002",
+                error: "Failed to connect to the database",
+            };
+        }
+        const result = await pool.request().query("SELECT * FROM users");
+        return {
+            success: true,
+            data: result.recordset,
+        };
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return {
+            success: false,
+            code: "U-05001",
+            error: "An unexpected error occurred while fetching users",
         };
     }
 }

@@ -1,7 +1,7 @@
 "use client";
 
+import { type HTMLMotionProps, motion, type Transition } from "motion/react";
 import * as React from "react";
-import { motion, type Transition, type HTMLMotionProps } from "motion/react";
 
 import { cn } from "@/lib/utils";
 import { MotionHighlight, MotionHighlightItem } from "../motion-highlight";
@@ -250,15 +250,15 @@ function TabsContent({ children, value, className, ...props }: TabsContentProps)
 
 export {
     Tabs,
+    TabsContent,
+    TabsContents,
     TabsList,
     TabsTrigger,
-    TabsContents,
-    TabsContent,
     useTabs,
-    type TabsContextType,
-    type TabsProps,
-    type TabsListProps,
-    type TabsTriggerProps,
-    type TabsContentsProps,
     type TabsContentProps,
+    type TabsContentsProps,
+    type TabsContextType,
+    type TabsListProps,
+    type TabsProps,
+    type TabsTriggerProps,
 };

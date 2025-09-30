@@ -4,7 +4,7 @@
 
 import { auth } from "@/config/authConfig";
 import { getUserByEmail } from "@/service/data";
-import { UserRole } from "@/types/roles";
+import type { UserRole } from "@/types/roles";
 import type { Session } from "next-auth";
 
 type UseServerAuthenticateResult = {
@@ -31,7 +31,11 @@ export default async function useServerAuthenticate(
             const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
             const userEmail = session.user.email;
             if (!userEmail) {
-                return { isAuthenticated: false, error: "User email not found in session", session };
+                return {
+                    isAuthenticated: false,
+                    error: "User email not found in session",
+                    session,
+                };
             }
 
             const userResponse = await getUserByEmail(userEmail);
@@ -43,12 +47,20 @@ export default async function useServerAuthenticate(
 
             const hasRole = userRole !== null && requiredRoles.includes(userRole);
             if (!hasRole) {
-                return { isAuthenticated: false, error: "User does not have the required role", session };
+                return {
+                    isAuthenticated: false,
+                    error: "User does not have the required role",
+                    session,
+                };
             }
         }
 
         return { isAuthenticated: true, error: null, session };
     } catch (err: unknown) {
-        return { isAuthenticated: false, error: (err instanceof Error ? err.message : "Unknown error checking session"), session: null };
+        return {
+            isAuthenticated: false,
+            error: err instanceof Error ? err.message : "Unknown error checking session",
+            session: null,
+        };
     }
 }

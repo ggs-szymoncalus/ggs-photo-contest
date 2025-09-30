@@ -1,20 +1,14 @@
-import { auth } from "@/config/authConfig";
-import SideNav from "@/components/SideNav";
-import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import SideNav from "@/components/SideNav";
+import useServerAuthenticate from "@/hooks/use-server-authenticate";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
-    const session = await auth();
-
-    // If the user is not authenticated, redirect them to the sign-in page
-    if (!session?.user) {
-        redirect("/signin"); // Redirect to your custom sign-in page
-    }
+    const { session } = await useServerAuthenticate(["user", "admin"]);
 
     // If they are authenticated, render the protected layout
     return (
         <div className="flex h-screen grow-1">
-            <SideNav />
+            <SideNav session={session} />
 
             <main className="flex flex-1 flex-col ">
                 <Navbar />
