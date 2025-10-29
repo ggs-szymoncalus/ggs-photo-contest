@@ -12,23 +12,23 @@ import { Toaster } from "sonner";
 // });
 
 export const metadata: Metadata = {
-    title: "GGS Photo Contest",
-    description: "A photo contest application built with Next.js",
+  title: "GGS Photo Contest",
+  description: "A photo contest application built with Next.js",
 };
 
 export default async function RootLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-    const session = await auth();
+  const session = await auth();
 
-    return (
-        <html lang="en">
-            <body className="antialiased">
-                <Toaster />
-                <Providers session={session}>{children}</Providers>
-            </body>
-        </html>
-    );
+  return (
+    <html lang="en">
+      <body className="antialiased">
+        <Toaster richColors />
+        <Providers session={session}>{children}</Providers>
+      </body>
+    </html>
+  );
 }

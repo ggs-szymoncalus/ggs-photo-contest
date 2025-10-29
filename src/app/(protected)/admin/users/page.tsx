@@ -1,26 +1,18 @@
-import { TabsContent } from "@/components/ui/shadcn-io/tabs";
-import { getUsers } from "@/service/data";
-import type { User } from "@/types/database";
-import { toast } from "sonner";
+import { UserTable } from "../components/UserTable";
 
-export default async function AdminUsersPage() {
-    const users = await getUsers();
-
-    if (!users.success) {
-        toast.error(`Error ${users.code}: ${users.error}`);
-    }
-
+export default function AdminUsersPage() {
     return (
-        <TabsContent value="users">
-            <h1>Admin Users</h1>
-            <ul>
-                {users.success &&
-                    users.data.map((user: User) => (
-                        <li key={user.id}>
-                            {user.firstName} {user.lastName}
-                        </li>
-                    ))}
-            </ul>
-        </TabsContent>
+        <div className="container mx-auto p-6 max-w-full">
+            <div className="flex flex-col space-y-6">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
+                    <p className="text-muted-foreground">
+                        View and manage user accounts. Only user roles can be edited.
+                    </p>
+                </div>
+
+                <UserTable />
+            </div>
+        </div>
     );
 }

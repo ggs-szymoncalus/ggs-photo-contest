@@ -1,8 +1,10 @@
-import serverAuthenticate from "@/hooks/use-server-authenticate";
+"use server";
+
+import { revalidatePath } from "next/cache";
+import useServerAuthenticate from "@/hooks/use-server-authenticate";
 import type { UserRole } from "@/types/roles";
 import { addUser, deleteUser, updateUser } from "@/service/data";
-import type { ErrorResponse } from "@/types/response";
-import { toast } from "sonner";
+import { USER_ROLES } from "@/types/roles";
 
 export interface CreateUserData {
     email: string;
@@ -20,28 +22,20 @@ export interface UpdateUserData {
     role?: UserRole;
 }
 
-export const createUser = async (data: CreateUserData) => {
+export async function createUser(data: CreateUserData) {
+    // Check admin authorization
+    const authResult = await useServerAuthenticate(USER_ROLES.ADMIN);
+    if (!authResult.isAuthenticated) {
+        return {
+            success: false,
+            error: authResult.error || "Authentication required. Admin privileges needed to create users.",
+        };
+    }
+
     const { email, first_name, last_name, role } = data;
-    const { isAuthenticated, session, error } = await serverAuthenticate("admin");
-
-    if (error) {
-        toast.error(`An unexpected error occurred: ${error}`);
-        return;
-    }
-
-    if (!session || !session.user) {
-        toast.error("You must be signed in to create a user.");
-        return;
-    }
-
-    if (!isAuthenticated) {
-        toast.error("You must be signed in as an admin to create a user.");
-        return;
-    }
 
     try {
         const slackToken = process.env.SLACK_TOKEN;
-
         let icon: string | null = null;
 
         if (slackToken) {
@@ -75,72 +69,93 @@ export const createUser = async (data: CreateUserData) => {
             }
         }
 
-        // Implementation for creating a user (replace with real DB/API call as needed)
-        const addedUserResponse = await addUser({ email, first_name, last_name, icon, role });
-        if (!addedUserResponse.success || !addedUserResponse.data) {
-            const errResponse = addedUserResponse as ErrorResponse;
-            toast.error(`Error creating user: ${errResponse.error} (code: ${errResponse.code})`);
-            return;
+        const result = await addUser({ email, first_name, last_name, icon, role });
+        
+        if (result.success) {
+            revalidatePath("/admin/users");
+            return {
+                success: true,
+                data: result.data,
+            };
         }
-        const createdUser = addedUserResponse.data;
+        
+        return {
+            success: false,
+            error: result.error,
+        };
+    } catch (error) {
+        console.error("Error in createUser action:", error);
+        return {
+            success: false,
+            error: "An unexpected error occurred",
+        };
+    }
+}
 
-        return createdUser;
-    } catch (err) {
-        console.error("Error creating user:", err);
-        toast.error(`An unexpected error occurred: ${(err as Error).message}`);
-        return;
+export async function deleteUserById(userId: number) {
+    // Check admin authorization
+    const authResult = await useServerAuthenticate(USER_ROLES.ADMIN);
+    if (!authResult.isAuthenticated) {
+        return {
+            success: false,
+            error: authResult.error || "Authentication required. Admin privileges needed to delete users.",
+        };
     }
-    // Implementation for creating a user
-};
 
-export const deleteUserById = async (userId: number) => {
-    const { isAuthenticated, session, error } = await serverAuthenticate("admin");
-    if (error) {
-        toast.error(`An unexpected error occurred: ${error}`);
-        return;
-    }
-    if (!session || !session.user) {
-        toast.error("You must be signed in to delete a user.");
-        return;
-    }
-    if (!isAuthenticated) {
-        toast.error("You must be signed in as an admin to delete a user.");
-        return;
-    }
     try {
-        await deleteUser(userId);
-        toast.success(`User with ID ${userId} deleted successfully.`);
-        return true;
-    } catch (err) {
-        console.error("Error deleting user:", err);
-        toast.error(`An unexpected error occurred: ${(err as Error).message}`);
-        return false;
+        const result = await deleteUser(userId);
+        
+        if (result.success) {
+            revalidatePath("/admin/users");
+            return {
+                success: true,
+                data: result.data,
+            };
+        }
+        
+        return {
+            success: false,
+            error: result.error,
+        };
+    } catch (error) {
+        console.error("Error in deleteUserById action:", error);
+        return {
+            success: false,
+            error: "An unexpected error occurred",
+        };
     }
-    // Implementation for deleting a user
-};
+}
 
-export const updateUserById = async (userId: number, data: UpdateUserData) => {
-    const { isAuthenticated, session, error } = await serverAuthenticate("admin");
-    if (error) {
-        toast.error(`An unexpected error occurred: ${error}`);
-        return;
+export async function updateUserById(userId: number, data: UpdateUserData) {
+    // Check admin authorization
+    const authResult = await useServerAuthenticate(USER_ROLES.ADMIN);
+    if (!authResult.isAuthenticated) {
+        return {
+            success: false,
+            error: authResult.error || "Authentication required. Admin privileges needed to update users.",
+        };
     }
-    if (!session || !session.user) {
-        toast.error("You must be signed in to update a user.");
-        return;
-    }
-    if (!isAuthenticated) {
-        toast.error("You must be signed in as an admin to update a user.");
-        return;
-    }
+
     try {
-        await updateUser(userId, data);
-        toast.success(`User with ID ${userId} updated successfully.`);
-        return true;
-    } catch (err) {
-        console.error("Error updating user:", err);
-        toast.error(`An unexpected error occurred: ${(err as Error).message}`);
-        return false;
+        const result = await updateUser(userId, data);
+        
+        if (result.success) {
+            revalidatePath("/admin/users");
+            return {
+                success: true,
+                data: result.data,
+            };
+        }
+        
+        return {
+            success: false,
+            error: result.error,
+        };
+    } catch (error) {
+        console.error("Error in updateUserById action:", error);
+        return {
+            success: false,
+            error: "An unexpected error occurred",
+        };
     }
-    // Implementation for updating a user
-};
+}

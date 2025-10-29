@@ -63,6 +63,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 if (userExists.success && userExists.data) {
                     token.isAdmin = userExists.data.role === "admin";
+                    token.userId = userExists.data.id;
                 }
             }
 
@@ -74,6 +75,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.isAdmin = token.isAdmin as boolean;
+                // Override the id field with our database ID
+                Object.assign(session.user, { id: token.userId as number });
             }
             return session;
         },

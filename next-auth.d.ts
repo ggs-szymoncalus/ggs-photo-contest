@@ -9,6 +9,8 @@ declare module "next-auth" {
         user: {
             /** Whether the user is an admin. */
             isAdmin: boolean;
+            /** The user's database ID. */
+            id: number;
             /**
              * By default, TypeScript merges new interface properties case-insensitively.
              * To make them case-sensitive, add a unique property, like so:
@@ -19,5 +21,12 @@ declare module "next-auth" {
 
     interface User {
         role: UserRole;
+    }
+
+    interface JWT {
+        /** Whether the user is an admin. */
+        isAdmin?: boolean;
+        /** The user's database ID. */
+        userId?: number;
     }
 }

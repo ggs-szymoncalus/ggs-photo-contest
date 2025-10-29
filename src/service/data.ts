@@ -2,7 +2,7 @@
 
 import type { CreateUserData, UpdateUserData } from "@/actions/userActions";
 import { getConnection } from "@/lib/database";
-import type { Submission, User } from "@/types/database";
+import type { Category, Submission, User } from "@/types/database";
 import type { ServiceResponse } from "@/types/response";
 
 export async function getSubmissions(): Promise<ServiceResponse<Submission[]>> {
@@ -17,7 +17,20 @@ export async function getSubmissions(): Promise<ServiceResponse<Submission[]>> {
             };
         }
 
-        const submissions = await pool.request().query("SELECT * FROM submissions");
+        const submissions = await pool.request().query(`
+            SELECT 
+                s.id,
+                s.user_id,
+                s.category_id,
+                s.image_link,
+                s.title,
+                s.description,
+                s.location,
+                s.created_at,
+                s.isWinner
+            FROM submissions s
+            ORDER BY s.created_at DESC
+        `);
 
         return {
             success: true,
@@ -59,13 +72,16 @@ export async function getSubmissionsFromThisWeek(): Promise<ServiceResponse<Subm
 
             SELECT 
                 s.id,
-                u.first_name + ' ' + u.last_name AS [name],
+                s.user_id,
+                s.category_id,
                 s.image_link,
                 s.title,
                 s.description,
-                c.name AS [category],
                 s.location,
-                s.created_at
+                s.created_at,
+                s.isWinner,
+                u.first_name + ' ' + u.last_name AS [name],
+                c.name AS [category]
             FROM submissions s
             JOIN users u ON s.user_id = u.id
             JOIN categories c ON c.id = s.category_id
@@ -103,10 +119,23 @@ export async function getSubmissionsByUserId(
             };
         }
         const result = await pool
-
             .request()
             .input("userId", userId)
-            .query("SELECT * FROM submissions WHERE user_id = @userId");
+            .query(`
+                SELECT 
+                    s.id,
+                    s.user_id,
+                    s.category_id,
+                    s.image_link,
+                    s.title,
+                    s.description,
+                    s.location,
+                    s.created_at,
+                    s.isWinner
+                FROM submissions s
+                WHERE s.user_id = @userId
+                ORDER BY s.created_at DESC
+            `);
         return {
             success: true,
             data: result.recordset,
@@ -136,10 +165,22 @@ export async function getSubmissionById(
         }
 
         const result = await pool
-
             .request()
             .input("submissionId", submissionId)
-            .query("SELECT * FROM submissions WHERE id = @submissionId");
+            .query(`
+                SELECT 
+                    s.id,
+                    s.user_id,
+                    s.category_id,
+                    s.image_link,
+                    s.title,
+                    s.description,
+                    s.location,
+                    s.created_at,
+                    s.isWinner
+                FROM submissions s
+                WHERE s.id = @submissionId
+            `);
 
         if (result.recordset.length === 0) {
             return {
@@ -395,6 +436,186 @@ export async function getUsers(): Promise<ServiceResponse<User[]>> {
             success: false,
             code: "U-05001",
             error: "An unexpected error occurred while fetching users",
+        };
+    }
+}
+
+export async function getCategories(): Promise<ServiceResponse<Category[]>> {
+    try {
+        const pool = await getConnection();
+        if (!pool) {
+            return {
+                success: false,
+                code: "C-00002",
+                error: "Failed to connect to the database",
+            };
+        }
+        const result = await pool.request().query("SELECT * FROM categories ORDER BY id");
+        return {
+            success: true,
+            data: result.recordset,
+        };
+    } catch (error) {
+        console.error("Error fetching categories:", error);
+        return {
+            success: false,
+            code: "C-00001",
+            error: "An unexpected error occurred while fetching categories",
+        };
+    }
+}
+
+export async function getCategoryById(categoryId: number): Promise<ServiceResponse<Category>> {
+    try {
+        const pool = await getConnection();
+        if (!pool) {
+            return {
+                success: false,
+                code: "C-01002",
+                error: "Failed to connect to the database",
+            };
+        }
+        const result = await pool
+            .request()
+            .input("categoryId", categoryId)
+            .query("SELECT * FROM categories WHERE id = @categoryId");
+        if (result.recordset.length === 0) {
+            return {
+                success: false,
+                code: "C-01003",
+                error: "Category not found",
+            };
+        }
+        return {
+            success: true,
+            data: result.recordset[0],
+        };
+    } catch (error) {
+        console.error("Error fetching category by ID:", error);
+        return {
+            success: false,
+            code: "C-01001",
+            error: "An unexpected error occurred while fetching category by ID",
+        };
+    }
+}
+
+export async function addCategory(name: string): Promise<ServiceResponse<Category>> {
+    try {
+        const pool = await getConnection();
+        if (!pool) {
+            return {
+                success: false,
+                code: "C-02002",
+                error: "Failed to connect to the database",
+            };
+        }
+        const result = await pool
+            .request()
+            .input("name", name)
+            .query(
+                `INSERT INTO categories (name)
+                    OUTPUT INSERTED.id, INSERTED.name
+                    VALUES (@name)`
+            );
+        return {
+            success: true,
+            data: result.recordset[0],
+        };
+    } catch (error) {
+        console.error("Error adding category:", error);
+        return {
+            success: false,
+            code: "C-02001",
+            error: "An unexpected error occurred while adding the category",
+        };
+    }
+}
+
+export async function updateCategory(
+    categoryId: number,
+    name: string
+): Promise<ServiceResponse<Category>> {
+    try {
+        const pool = await getConnection();
+        if (!pool) {
+            return {
+                success: false,
+                code: "C-03002",
+                error: "Failed to connect to the database",
+            };
+        }
+        const result = await pool
+            .request()
+            .input("categoryId", categoryId)
+            .input("name", name)
+            .query(
+                `UPDATE categories
+                    SET name = @name
+                    WHERE id = @categoryId`
+            );
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                code: "C-03003",
+                error: "Category not found",
+            };
+        }
+
+        const category = await getCategoryById(categoryId);
+        if (!category.success || !category.data) {
+            return {
+                success: false,
+                code: "C-03004",
+                error: "Failed to retrieve updated category",
+            };
+        }
+
+        return {
+            success: true,
+            data: category.data,
+        };
+    } catch (error) {
+        console.error("Error updating category:", error);
+        return {
+            success: false,
+            code: "C-03001",
+            error: "An unexpected error occurred while updating the category",
+        };
+    }
+}
+
+export async function deleteCategory(categoryId: number): Promise<ServiceResponse<boolean>> {
+    try {
+        const pool = await getConnection();
+        if (!pool) {
+            return {
+                success: false,
+                code: "C-04002",
+                error: "Failed to connect to the database",
+            };
+        }
+        const result = await pool
+            .request()
+            .input("categoryId", categoryId)
+            .query("DELETE FROM categories WHERE id = @categoryId");
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                code: "C-04003",
+                error: "Category not found",
+            };
+        }
+        return {
+            success: true,
+            data: true,
+        };
+    } catch (error) {
+        console.error("Error deleting category:", error);
+        return {
+            success: false,
+            code: "C-04001",
+            error: "An unexpected error occurred while deleting the category",
         };
     }
 }

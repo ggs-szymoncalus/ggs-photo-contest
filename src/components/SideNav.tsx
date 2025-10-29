@@ -5,6 +5,7 @@ import { CircleUser, Database, Images, LogOut } from "lucide-react";
 import type { Session } from "next-auth";
 import Image from "next/image";
 import Link from "next/link";
+import PhotoUploadModal from "./PhotoUploadModal";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
@@ -22,7 +23,7 @@ export default function SideNav({ session }: { session?: Session | null }) {
                         <Image src="/GGSPC.svg" alt="Logo" width={50} height={50} />
                         <div className="flex flex-col -space-y-1">
                             <h1 className="font-black text-left text-xl text-indigo-900">GGS</h1>
-                            <p className="text-sm text-indigo-500   ">Photo Contest</p>
+                            <p className="text-sm text-indigo-500">Photo Contest</p>
                         </div>
                     </Button>
                 </Link>
@@ -30,6 +31,7 @@ export default function SideNav({ session }: { session?: Session | null }) {
             <Separator />
             <SidebarContent>
                 <SidebarGroup>
+                    <PhotoUploadModal />
                     <Button variant="outline" className="h-auto justify-start mb-1">
                         <CircleUser />
                         <span className="ml-2">Profile</span>
@@ -59,6 +61,7 @@ export default function SideNav({ session }: { session?: Session | null }) {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
+                <Separator />
                 <div className="flex items-center gap-2 p-4">
                     <Avatar>
                         <AvatarImage
@@ -74,8 +77,6 @@ export default function SideNav({ session }: { session?: Session | null }) {
                         <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
                 </div>
-                <Separator />
-                <p className="text-sm text-gray-500 p-4">© 2025 GGS IT Consulting</p>
             </SidebarFooter>
         </Sidebar>
     );

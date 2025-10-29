@@ -1,5 +1,3 @@
-import { TabsContent } from "@/components/ui/shadcn-io/tabs";
-
 type Log = {
     id: string;
     level: "info" | "warn" | "error";
@@ -52,7 +50,7 @@ export default async function AdminLogsPage() {
     }
 
     return (
-        <TabsContent value="logs">
+        <div>
             <h1>Admin Logs (MOCK)</h1>
             <ul>
                 {res.data.map((log) => (
@@ -63,6 +61,6 @@ export default async function AdminLogsPage() {
                     </li>
                 ))}
             </ul>
-        </TabsContent>
+        </div>
     );
 }

@@ -1,24 +1,19 @@
-import { TabsContent } from "@/components/ui/shadcn-io/tabs";
-import { getSubmissions } from "@/service/data";
-import type { Submission } from "@/types/database";
-import { toast } from "sonner";
+import { SubmissionTable } from "../components/SubmissionTable";
 
-export default async function AdminSubmissionsPage() {
-    const submissions = await getSubmissions();
-
-    if (!submissions.success) {
-        toast.error(`Error ${submissions.code}: ${submissions.error}`);
-    }
-
+export default function AdminSubmissionsPage() {
     return (
-        <TabsContent value="submissions">
-            <h1>Admin Submissions</h1>
-            <ul>
-                {submissions.success &&
-                    submissions.data.map((submission: Submission) => (
-                        <li key={submission.id}>{submission.title}</li>
-                    ))}
-            </ul>
-        </TabsContent>
+        <div className="container mx-auto p-6 max-w-full mt-6">
+            <div className="flex flex-col space-y-6">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Manage Submissions</h1>
+                    <p className="text-muted-foreground">
+                        View and manage photo contest submissions. Administrators can delete
+                        submissions and view details.
+                    </p>
+                </div>
+
+                <SubmissionTable />
+            </div>
+        </div>
     );
 }
